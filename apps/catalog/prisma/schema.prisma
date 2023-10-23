@@ -1,0 +1,143 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Merchant {
+  catalogCategories CatalogCategory[]
+  catalogItems      CatalogItem[]
+  catalogs          Catalog[]
+  id                String                 @id @default(cuid())
+  modifierGroups    CatalogModifierGroup[]
+  modifiers         CatalogItemModifier[]
+}
+
+model Catalog {
+  categories       CatalogCategory[]
+  createdAt        DateTime          @default(now())
+  description      String            @default("")
+  enabled          Boolean           @default(true)
+  id               String            @id @default(cuid())
+  merchant         Merchant          @relation(fields: [merchantId], references: [id])
+  merchantId       String
+  name             String            @default("")
+  posIntegrationId String            @unique
+  schedule         CatalogSchedule[]
+  updatedAt        DateTime          @updatedAt
+}
+
+model CatalogSchedule {
+  catalog   Catalog                @relation(fields: [catalogId], references: [id])
+  catalogId String
+  createdAt DateTime               @default(now())
+  day       EnumCatalogScheduleDay
+  enabled   Boolean
+  id        String                 @id @default(cuid())
+  updatedAt DateTime               @updatedAt
+
+  @@unique([catalogId, day], name: "menuDay")
+}
+
+model CatalogCategory {
+  catalog          Catalog[]
+  catalogId        String?
+  createdAt        DateTime      @default(now())
+  description      String        @default("")
+  id               String        @id @default(cuid())
+  images           String
+  items            CatalogItem[]
+  merchant         Merchant      @relation(fields: [merchantId], references: [id])
+  merchantId       String
+  name             String
+  ordinal          Int           @default(9999)
+  posIntegrationId String        @unique
+  updatedAt        DateTime      @updatedAt
+}
+
+model CatalogItem {
+  category                  CatalogCategory[]
+  categoryId                String?
+  createdAt                 DateTime                                   @default(now())
+  description               String                                     @default("")
+  id                        String                                     @id @default(cuid())
+  images                    String
+  merchant                  Merchant                                   @relation(fields: [merchantId], references: [id])
+  merchantId                String
+  modifierGroups            CatalogModifierGroup[]
+  name                      String
+  ordinal                   Int                                        @default(9999)
+  posIntegrationId          String                                     @unique @default(cuid())
+  price                     Int
+  supportedFulfillmentModes EnumCatalogItemSupportedFulfillmentModes[] @default("[object Object]")
+  suspendedUntil            Float?
+  type                      EnumCatalogItemType                        @default(FOOD)
+  updatedAt                 DateTime                                   @updatedAt
+}
+
+model CatalogModifierGroup {
+  createdAt        DateTime              @default(now())
+  description      String                @default("")
+  id               String                @id @default(cuid())
+  images           String
+  itemId           String?
+  items            CatalogItem[]
+  maximumSelection Int                   @default(1)
+  merchant         Merchant              @relation(fields: [merchantId], references: [id])
+  merchantId       String
+  minimumSelection Int                   @default(0)
+  modifiers        CatalogItemModifier[]
+  name             String                @default("")
+  posIntegrationId String                @unique
+  updatedAt        DateTime              @updatedAt
+}
+
+model CatalogItemModifier {
+  createdAt        DateTime                    @default(now())
+  description      String                      @default("")
+  id               String                      @id @default(cuid())
+  merchant         Merchant                    @relation(fields: [merchantId], references: [id])
+  merchantId       String
+  modifierGroupId  String?
+  modifierGroups   CatalogModifierGroup[]
+  name             String
+  posIntegrationId String                      @unique
+  price            Int
+  suspendedUntil   Float?
+  type             EnumCatalogItemModifierType @default(FOOD)
+  updatedAt        DateTime                    @updatedAt
+}
+
+enum EnumCatalogScheduleDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum EnumCatalogItemSupportedFulfillmentModes {
+  PICKUP
+  DELIVERY
+}
+
+enum EnumCatalogItemType {
+  ALCOHOL
+  FOOD
+  REGULAR
+  SCHEDULED_SERVICE
+  ON_DEMAND_SERVICE
+}
+
+enum EnumCatalogItemModifierType {
+  ALCOHOL
+  FOOD
+  REGULAR
+  SCHEDULED_SERVICE
+  ON_DEMAND_SERVICE
+}
